@@ -288,7 +288,54 @@ class TInfo:
             return self.get_pointed_object().type_details.rettype
 
     def get_size(self):
-        # TODO:
+        # TODO: complete this
+        # The if-tree was taken from get_typename, assuming it's complete
+        base = get_base_type(self.get_decltype())
+        flags = get_type_flags(self.get_decltype())
+        if is_typeid_last(self.base_type):
+            if base == BT_UNK:
+                return 0
+            elif base == BT_VOID:
+                return 0
+            # 2-7
+            elif BT_INT8 <= base <= BT_INT:
+                if base == BT_INT8:
+                    return 1
+                elif base == BT_INT16:
+                    return 2
+                elif base == BT_INT32:
+                    return 4
+                elif base == BT_INT64:
+                    return 8
+                elif base == BT_INT128:
+                    return 16
+                elif base == BT_INT:
+                    return self.til.size_i
+            elif base == BT_BOOL:
+                return self.til.size_b
+            elif base == BT_FLOAT:
+                # TODO: return the correct size (take from get_typename the subtypes)
+                return self.til.size_i
+
+        # We might be able to use self.is_decl_udt which tests if the decltype is a struct or union
+        elif self.is_decl_struct():
+            return sum(m.type.get_size() for m in self.type_details.members)
+
+        elif self.is_decl_ptr():
+            # TODO: this is likely to be incorrect
+            return self.til.size_i
+
+        elif self.is_decl_array():
+            return self.type_details.n_elems * self.type_details.elem_type.get_size()
+
+        elif self.is_decl_typedef():
+            aliased_type = self.get_final_tinfo()
+            return aliased_type.get_size()
+
+        elif self.is_decl_union():
+            return max(m.type.get_size() for m in self.type_details.members)
+
+        # We should never get there, it means we haven't handled some type
         raise NotImplementedError()
 
     def get_conv(self):
