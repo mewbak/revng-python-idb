@@ -374,6 +374,10 @@ class TInfo:
             conv += "__usercall"
         elif cc == CM_CC_SPECIALP:
             conv += "__userpurge"
+        elif cc == CM_CC_UNKNOWN:
+            conv += "__unknowncc"
+        elif cc == CM_CC_VOIDARG:
+            conv += "__voidarg"
         return conv
 
     def get_typename(self):
