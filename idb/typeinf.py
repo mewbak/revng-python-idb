@@ -344,6 +344,10 @@ class TInfo:
         elif self.is_decl_union():
             return max(m.type.get_size() for m in self.type_details.members)
 
+        elif self.is_decl_bitfield():
+            # TODO: this is incorrect/misleading, as it returns the size of the underlying type, not the size of the bitfield!
+            return self.type_details.nbytes
+
         # We should never get there, it means we haven't handled some type
         raise NotImplementedError()
 
