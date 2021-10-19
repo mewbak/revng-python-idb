@@ -329,6 +329,15 @@ class TInfo:
             return self.type_details.n_elems * self.type_details.elem_type.get_size()
 
         elif self.is_decl_typedef():
+            # FIXME: right now we special-case uint{8,16,32,64}_t
+            if self.get_name() == "uint8_t":
+                return 1
+            elif self.get_name() == "uint16_t":
+                return 2
+            elif self.get_name() == "uint32_t":
+                return 4
+            elif self.get_name() == "uint64_t":
+                return 8
             aliased_type = self.get_final_tinfo()
             return aliased_type.get_size()
 
