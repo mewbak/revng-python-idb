@@ -344,6 +344,9 @@ class TInfo:
         elif self.is_decl_union():
             return max(m.type.get_size() for m in self.type_details.members)
 
+        elif self.is_decl_enum():
+            return self.type_details.storage_size
+
         elif self.is_decl_bitfield():
             # TODO: this is incorrect/misleading, as it returns the size of the underlying type, not the size of the bitfield!
             return self.type_details.nbytes
@@ -1234,6 +1237,7 @@ class EnumTypeData(TypeData):
         self.bte = 0
         self.members = []
         self.ref = None
+        self.storage_size = None
 
     def deserialize(self, til, ts, fields, fieldcmts):
         typ = ts.u8()
@@ -1260,7 +1264,21 @@ class EnumTypeData(TypeData):
                 cur += lo | (hi << 32) & mask
                 member = EnumMember(fields[i], value=cur)
                 self.members.append(member)
+
+        self.storage_size = self._compute_storage_size(til)
+
         return self
+
+    def _compute_storage_size(self, til):
+        emsize = self.bte & BTE_SIZE_MASK
+        if emsize != 0:
+            bytesize = 1 << (emsize - 1)
+        elif til is not None:
+            bytesize = til.size_e
+        else:
+            bytesize = 4
+
+        return bytesize
 
     def calc_mask(self, til):
         emsize = self.bte & BTE_SIZE_MASK
