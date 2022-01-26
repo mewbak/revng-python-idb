@@ -1215,7 +1215,11 @@ class Function:
     def get_signature(self):
         try:
             typebuf = self.netnode.supval(tag="S", index=0x3000)
-            namebuf = self.netnode.supval(tag="S", index=0x3001)
+            try:
+                namebuf = self.netnode.supval(tag="S", index=0x3001)
+            except KeyError:
+                namebuf = b""
+
             typ = six.indexbytes(typebuf, 0x0)
             if not idb.typeinf_flags.is_type_func(typ):
                 raise RuntimeError("is not function")
