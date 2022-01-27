@@ -288,16 +288,25 @@ class TInfo:
             return self.get_pointed_object().type_details.rettype
 
     def get_size(self):
-        # TODO: complete this
-        # The if-tree was taken from get_typename, assuming it's complete
-        base = get_base_type(self.get_decltype())
-        flags = get_type_flags(self.get_decltype())
+        decltype = self.get_decltype()
+        base = get_base_type(decltype)
         if is_typeid_last(self.base_type):
-            if base == BT_UNK:
-                return 0
-            elif base == BT_VOID:
-                return 0
-            # 2-7
+            if base == BT_UNK or base == BT_VOID:
+                if decltype == BT_UNK_BYTE:
+                    return 1
+                elif decltype == BT_UNK_WORD:
+                    return 2
+                elif decltype == BT_UNK_DWORD:
+                    return 4
+                elif decltype == BT_UNK_QWORD:
+                    return 8
+                elif decltype == BT_UNK_OWORD:
+                    return 16
+                elif decltype == BT_UNKNOWN:
+                    return 0
+                else:
+                    # TODO: warn here?
+                    return 0
             elif BT_INT8 <= base <= BT_INT:
                 if base == BT_INT8:
                     return 1
@@ -314,29 +323,41 @@ class TInfo:
             elif base == BT_BOOL:
                 return self.til.size_b
             elif base == BT_FLOAT:
-                # TODO: return the correct size (take from get_typename the subtypes)
-                return self.til.size_i
+                if decltype == BTF_FLOAT:
+                    return 4
+                elif decltype == BTF_DOUBLE:
+                    return 8
+                elif decltype == BTF_LDOUBLE:
+                    return 8
+                elif decltype == BTF_TBYTE:
+                    # TODO: if processor_t::use_tbyte() we should return processor_t::tbyte_size, however this info is
+                    # not available
+                    return 2
+                else:
+                    raise NotImplementedError()
 
         # We might be able to use self.is_decl_udt which tests if the decltype is a struct or union
         elif self.is_decl_struct():
             return sum(m.type.get_size() for m in self.type_details.members)
 
         elif self.is_decl_ptr():
-            # TODO: this is likely to be incorrect
-            return self.til.size_i
+            return self.til.wordsize
 
         elif self.is_decl_array():
             return self.type_details.n_elems * self.type_details.elem_type.get_size()
 
         elif self.is_decl_typedef():
             # FIXME: right now we special-case uint{8,16,32,64}_t
-            if self.get_name() == "uint8_t":
+            if self.get_name() in ["uint8_t", "int8_t", "BYTE"]:
                 return 1
-            elif self.get_name() == "uint16_t":
+            elif self.get_name() in ["uint16_t", "int16_t", "WORD"]:
                 return 2
-            elif self.get_name() == "uint32_t":
+            elif self.get_name() in ["uint32_t", "int32_t", "DWORD"]:
                 return 4
-            elif self.get_name() == "uint64_t":
+            elif self.get_name() in ["uint64_t", "int64_t", "QWORD"]:
+                return 8
+            # TODO: we cannot hardcode this here
+            elif self.get_name() == "size_t":
                 return 8
             aliased_type = self.get_final_tinfo()
             return aliased_type.get_size()
@@ -348,10 +369,10 @@ class TInfo:
             return self.type_details.storage_size
 
         elif self.is_decl_bitfield():
-            # TODO: this is incorrect/misleading, as it returns the size of the underlying type, not the size of the bitfield!
+            # TODO: is this misleading? It returns the size of the underlying type
             return self.type_details.nbytes
 
-        # We should never get there, it means we haven't handled some type
+        # If we get here it means we haven't handled some type
         raise NotImplementedError()
 
     def get_conv(self):
