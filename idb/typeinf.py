@@ -342,7 +342,7 @@ class TInfo:
             return aliased_type.get_size()
 
         elif self.is_decl_union():
-            return max(m.type.get_size() for m in self.type_details.members)
+            return max([m.type.get_size() for m in self.type_details.members], default=0)
 
         elif self.is_decl_enum():
             return self.type_details.storage_size

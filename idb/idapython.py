@@ -1652,7 +1652,7 @@ class ida_nalt:
         return is_flag_set(self.get_aflags(ea), AFLAGS.AFL_NOTCODE)
 
     def get_import_module_qty(self):
-        return max(idb.analysis.Imports(self.idb).lib_names.keys())
+        return max(idb.analysis.Imports(self.idb).lib_names.keys(), default=0)
 
     def get_import_module_name(self, mod_index):
         return idb.analysis.Imports(self.idb).lib_names[mod_index]
